@@ -83,6 +83,51 @@ relocated:
 spin:	jmp	spin
 
 
+#ifdef CONFIG_KSPACE
+.comm ret_eip, 4
+.comm ebp_reg, 4
+.comm esp_reg, 4
+
+.stabs "sys_yield:",36,0,0,sys_yield
+.globl sys_yield
+.type  sys_yield, @function
+sys_yield:
+	popl ret_eip
+	movl %ebp, ebp_reg
+	movl %esp, esp_reg
+	movl $0x0,%ebp
+	movl $(bootstacktop),%esp
+	pushl $GD_KD
+	pushl esp_reg
+	pushfl
+	#orl $0x200, (%esp)
+	pushl $GD_KT
+	pushl ret_eip
+	pushl $0x0
+	pushl $0x0
+	pushl %ds
+	pushl %es
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	pushl %ebx
+	pushl esp_reg
+	pushl ebp_reg
+	pushl %esi
+	pushl %edi
+	pushl %esp
+	call csys_yield
+loop1:	jmp loop1
+
+#LAB 3: Your code here.
+.stabs "sys_exit:",36,0,0,sys_exit
+.globl sys_exit
+.type  sys_exit, @function
+sys_exit:
+	call csys_exit 
+loop2:	jmp loop2
+#endif
+
 .data
 ###################################################################
 # boot stack
