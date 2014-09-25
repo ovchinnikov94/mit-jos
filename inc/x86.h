@@ -247,6 +247,13 @@ read_ebp(void)
 	return ebp;
 }
 
+/*static __inline uint32_t 
+read_eip(void) {
+	uint32_t eip;
+	__asm __volatile("movl %%eip,%0": "=r" (eip));
+	return eip;
+}*/
+
 static __inline uint32_t
 read_esp(void)
 {

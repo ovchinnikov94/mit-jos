@@ -11,8 +11,7 @@
 #include <kern/sched.h>
 #include <kern/cpu.h>
 
-void
-i386_init(void)
+void i386_init(void)
 {
 	extern char edata[], end[];
 
