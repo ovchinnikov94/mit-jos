@@ -204,6 +204,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	// e->env_tf.tf_esp = 0xf0210000;
 #else
 #endif
+
+	e->env_tf.tf_eflags |= FL_IF;
+
 	// You will set e->env_tf.tf_eip later.
 
 	// commit the allocation
@@ -348,7 +351,6 @@ csys_yield(struct Trapframe *tf)
 	sched_yield();
 }
 #endif
-
 
 //
 // Restores the register values in the Trapframe with the 'ret' instruction.
