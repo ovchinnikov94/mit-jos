@@ -2,20 +2,21 @@ OBJDIRS += prog
 
 PROGLIBS = jos
 
+.SECONDARY: $(patsubst %, %.ld, $(KERN_BINFILES))
+
 $(OBJDIR)/prog/%.o: prog/%.c $(OBJDIR)/.vars.USER_CFLAGS
 	@echo + cc[PROG] $<
 	@mkdir -p $(@D)
 	$(V)$(CC) -nostdinc $(USER_CFLAGS) -c -o $@ $<
 
-$(OBJDIR)/prog/test1: $(OBJDIR)/prog/test1.o $(OBJDIR)/lib/entry.o $(PROGLIBS:%=$(OBJDIR)/lib/lib%.a) prog/prog1.ld
-	@echo + ld $@
-	$(V)$(LD) -o $@ -T prog/prog1.ld $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $@.o -L$(OBJDIR)/lib $(PROGLIBS:%=-l%) $(GCC_LIB)
-	$(V)$(OBJDUMP) -S $@ > $@.asm
-	$(V)$(NM) -n $@ > $@.sym
+$(OBJDIR)/prog/%.ld: prog/prog.ld
+	@echo + GEN: $@
+	@mkdir -p $(@D)
+	$(shell perl -e '"$(@F)" =~ m/(\d+)\.ld$$/; $$addr=sprintf("0x%x", 0xf0220000+($$1 > 7 ? 0x60000: 0x0)+$$1*0x10000); while(<>){s/#ADDRESS#/$$addr/; print;};' $< > $@)
 
-$(OBJDIR)/prog/test2: $(OBJDIR)/prog/test2.o $(OBJDIR)/lib/entry.o $(PROGLIBS:%=$(OBJDIR)/lib/lib%.a) prog/prog2.ld
+$(OBJDIR)/prog/%: $(OBJDIR)/prog/%.o $(OBJDIR)/prog/%.ld $(OBJDIR)/lib/entry.o $(PROGLIBS:%=$(OBJDIR)/lib/lib%.a)
 	@echo + ld $@
-	$(V)$(LD) -o $@ -T prog/prog2.ld $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $@.o -L$(OBJDIR)/lib $(PROGLIBS:%=-l%) $(GCC_LIB)
+	$(V)$(LD) -o $@ -T $@.ld $(LDFLAGS) -nostdlib $(OBJDIR)/lib/entry.o $@.o -L$(OBJDIR)/lib $(PROGLIBS:%=-l%) $(GCC_LIB)
 	$(V)$(OBJDUMP) -S $@ > $@.asm
 	$(V)$(NM) -n $@ > $@.sym
 
