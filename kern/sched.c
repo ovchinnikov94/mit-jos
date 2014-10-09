@@ -9,8 +9,7 @@ void sched_halt(void);
 
 // Choose a user environment to run and run it.
 void
-sched_yield(void)
-{
+sched_yield(void) {
 	struct Env *idle;
 
 	// Implement simple round-robin scheduling.
@@ -28,9 +27,30 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 3: Your code here.
-	env_run(&envs[0]);
-	
+	//cprintf("SCHED_YIELD\n");
+	int i = (curenv) ? (curenv - envs + 1) : 1;
+	int k;
+	int flag = 0;
+	for (k = 0; k < NENV-1; k++) {
+		if (envs[i].env_status == ENV_RUNNABLE) {
+			cprintf("envrun RUNNABLE: %d\n",i);
+			env_run(&envs[i]);
+			flag = 1;	
+		}
+		i++;
+		//if (!flag) cprintf("NO \n");
+		if (i >= NENV || i < 0) i = 0;
+	}
+	if (!flag) {
+		//cprintf("NOTHING ELSE");
+		if (curenv)
+			if (curenv->env_status == ENV_RUNNABLE || curenv->env_status == ENV_RUNNING) {
+				cprintf("envrun RUNNING: %d\n",curenv-envs);
+				env_run(curenv);
+			}
+	}
 	// sched_halt never returns
+	cprintf("sched_halt\n");
 	sched_halt();
 }
 
@@ -38,8 +58,7 @@ sched_yield(void)
 // timer interrupt wakes it up. This function never returns.
 //
 void
-sched_halt(void)
-{
+sched_halt(void) {
 	int i;
 
 	// For debugging and testing purposes, if there are no runnable

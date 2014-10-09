@@ -121,7 +121,16 @@ env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
-	
+	int i =0;
+	for (i = 0; i < NENV; i++) {
+		if (i < NENV -1) env_array[i].env_link = env_array+i+1;
+		else env_array[i].env_link = NULL;
+		env_array[i].env_id = 0;
+		env_array[i].env_parent_id = 0;
+		env_array[i].env_status = ENV_FREE;
+		env_array[i].env_runs = 0;
+	}
+	env_free_list = env_array;
 	// Per-CPU part of the initialization
 	env_init_percpu();
 }
@@ -158,26 +167,21 @@ env_init_percpu(void)
 int
 env_alloc(struct Env **newenv_store, envid_t parent_id)
 {
-	int32_t generation;
 	int r;
 	struct Env *e;
 
 	if (!(e = env_free_list)) {
+		cprintf("NO FREE ENV\n");
 		return -E_NO_FREE_ENV;
 	}
+	//env_free_list = env_free_list->env_link;
+	int gen = (e->env_id + (1 << ENVGENSHIFT)) & ~(NENV - 1);
+	if (gen>0)
+		gen = 1<<ENVGENSHIFT;
+	e->env_id = gen | (e - envs);
 
-	// Generate an env_id for this environment.
-	generation = (e->env_id + (1 << ENVGENSHIFT)) & ~(NENV - 1);
-	if (generation <= 0)	// Don't create a negative env_id.
-		generation = 1 << ENVGENSHIFT;
-	e->env_id = generation | (e - envs);
 
-	// Set the basic status variables.
 	e->env_parent_id = parent_id;
-#ifdef CONFIG_KSPACE
-	e->env_type = ENV_TYPE_KERNEL;
-#else
-#endif
 	e->env_status = ENV_RUNNABLE;
 	e->env_runs = 0;
 
@@ -201,7 +205,13 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_ss = GD_KD | 0;
 	e->env_tf.tf_cs = GD_KT | 0;
 	// LAB 3: Your code here.
-	// e->env_tf.tf_esp = 0xf0210000;
+	int sp;
+	__asm__("mov %%esp, %0" : "=r"(sp));
+	
+	e->env_tf.tf_esp = sp;
+	sp+=2*PGSIZE;
+	__asm__("mov %0, %%esp" : "=r"(sp));
+	//cprintf("ESP ESP - %d\n",e->env_tf.tf_esp);
 #else
 #endif
 	// You will set e->env_tf.tf_eip later.
@@ -236,8 +246,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 //  - How might load_icode fail?  What might be wrong with the given input?
 //
 static void
-load_icode(struct Env *e, uint8_t *binary, size_t size)
-{
+load_icode(struct Env *e, uint8_t *binary, size_t size) {
 	// Hints:
 	//  Load each program segment into memory
 	//  at the address specified in the ELF section header.
@@ -258,27 +267,68 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	// LAB 3: Your code here.
+	//cprintf("LOAD ICODE!\n");
+	struct Elf *elfhdr = (struct Elf *)binary;
+	struct Proghdr *ph, *eph;
+	 
+	if (elfhdr->e_magic != ELF_MAGIC) 
+		panic("Error in load_icode(): %e",-E_INVAL);
+	
+	ph = (struct Proghdr *) ((uint8_t *) elfhdr + elfhdr->e_phoff);
+	eph = ph + elfhdr->e_phnum;
+
+	for (; ph < eph; ph++) {
+		if (ph->p_type == ELF_PROG_LOAD) {
+			if (ph->p_filesz > ph->p_memsz) 
+				panic("Error in load_icode(): %e",-E_NO_MEM);
+			memmove((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+			memset((void *) ph->p_va + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
+		}
+	}
+	
+	
+	e->env_tf.tf_eip = elfhdr->e_entry;
 	
 #ifdef CONFIG_KSPACE
 	// Uncomment this for task №5.
-	//bind_functions();
+	bind_functions(e,elfhdr);
 #endif
 }
 
 #ifdef CONFIG_KSPACE
+
+extern uintptr_t find_function(const char * const fname);
+
 static void
-bind_functions(struct Env *e, struct Elf *elf)
-{
+bind_functions(struct Env *e, struct Elf *elf) {
 	//find_function from kdebug.c should be used 
 	//LAB 3: Your code here.
-
-	/*
-	*((int *) 0xf0302008) = (int) &cprintf;
-	*((int *) 0xf0302010) = (int) &sys_exit;
-	*((int *) 0xf0302004) = (int) &sys_yield;
-	*((int *) 0xf020200c) = (int) &sys_exit;
-	*((int *) 0xf0202004) = (int) &sys_yield;
-	*/
+	 struct Secthdr* sect_hdr_start = (struct Secthdr*)((uint8_t*)elf + elf->e_shoff);
+        struct Secthdr* sect_hdr_end = sect_hdr_start + elf->e_shnum;
+        struct Secthdr* sect_hdr = NULL;
+        struct Elf32_Sym* sym = NULL, *sym_start = NULL, *sym_end = NULL;
+        char* strtab = NULL;
+        
+        for (sect_hdr = sect_hdr_start; sect_hdr < sect_hdr_end; sect_hdr++) {
+            if (sect_hdr->sh_type == ELF_SHT_SYMTAB) {
+                sym_start = (struct Elf32_Sym*)((uint8_t*)elf + sect_hdr->sh_offset);
+                sym_end = (struct Elf32_Sym*)((uint8_t*)elf + sect_hdr->sh_offset + sect_hdr->sh_size);
+            }
+            else if (sect_hdr->sh_type == ELF_SHT_STRTAB)
+                strtab = (char*)elf + sect_hdr->sh_offset;
+            uint32_t addr;
+            for (sym = sym_start; sym < sym_end; sym++)
+            	if ((ELF32_ST_BIND(sym->st_info) == 1) && (addr = find_function(&strtab[sym->st_name])))
+                	{*(uint32_t*)sym->st_value = (uint32_t)addr; /*cprintf("%s\n",sym->st_name);*/}
+        }
+        return;
+	
+	//*((int *) 0xf0100e3c) = (int) &cprintf;
+	//*((int *) 0xf010008d) = (int) &sys_exit;
+	//*((int *) 0xf0100040) = (int) &sys_yield;
+	//*((int *) 0xf010008d) = (int) &sys_exit;
+	//*((int *) 0xf0100040) = (int) &sys_yield;
+	
 }
 #endif
 
@@ -290,9 +340,14 @@ bind_functions(struct Env *e, struct Elf *elf)
 // The new env's parent ID is set to 0.
 //
 void
-env_create(uint8_t *binary, size_t size, enum EnvType type)
-{
+env_create(uint8_t *binary, size_t size, enum EnvType type) {
 	//LAB 3: Your code here.
+	//int k;
+	struct Env *env;
+	if (env_alloc(&env,0)) 
+		panic("Error in env_create(): env_alloc");
+	env->env_type = type;
+	load_icode(env,binary,size);
 }
 
 //
@@ -336,8 +391,7 @@ env_destroy(struct Env *e)
 
 #ifdef CONFIG_KSPACE
 void
-csys_exit(void)
-{
+csys_exit(void) {
 	env_destroy(curenv);
 }
 
@@ -357,8 +411,7 @@ csys_yield(struct Trapframe *tf)
 // This function does not return.
 //
 void
-env_pop_tf(struct Trapframe *tf)
-{
+env_pop_tf(struct Trapframe *tf) {
 #ifdef CONFIG_KSPACE
 	static uintptr_t eip = 0;
 	eip = tf->tf_eip;
@@ -402,24 +455,39 @@ env_pop_tf(struct Trapframe *tf)
 // This function does not return.
 //
 void
-env_run(struct Env *e)
-{
+env_run(struct Env *e) {
 	// Step 1: If this is a context switch (a new environment is running):
 	//	   1. Set the current environment (if any) back to
 	//	      ENV_RUNNABLE if it is ENV_RUNNING (think about
 	//	      what other states it can be in),
+	if (curenv!=e) {
+		//cprintf("!=\n");
+		if (curenv!=NULL)
+			if (curenv->env_status == ENV_RUNNING) {
+				//cprintf("==ENV_RUNNING, %d\n",curenv-envs);
+				curenv->env_status = ENV_RUNNABLE;
+			}
+	
 	//	   2. Set 'curenv' to the new environment,
+		curenv = e;
+	
 	//	   3. Set its status to ENV_RUNNING,
+		e->env_status = ENV_RUNNING;
+	
 	//	   4. Update its 'env_runs' counter,
+		e->env_runs++;
+	
+	}
 	// Step 2: Use env_pop_tf() to restore the environment's
 	//	   registers and starting execution of process.
-
+			
 	// Hint: This function loads the new environment's state from
 	//	e->env_tf.  Go back through the code you wrote above
 	//	and make sure you have set the relevant parts of
 	//	e->env_tf to sensible values.
 	//
 	//LAB 3: Your code here.
+	
 	env_pop_tf(&e->env_tf);
 }
 

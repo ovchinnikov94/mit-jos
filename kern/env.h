@@ -5,6 +5,7 @@
 
 #include <inc/env.h>
 #include <kern/cpu.h>
+#include <inc/elf.h>
 
 extern struct Env *envs;		// All environments
 extern struct Env *curenv;
@@ -21,6 +22,8 @@ int	envid2env(envid_t envid, struct Env **env_store, bool checkperm);
 // The following two functions do not return
 void	env_run(struct Env *e) __attribute__((noreturn));
 void	env_pop_tf(struct Trapframe *tf) __attribute__((noreturn));
+
+static void bind_functions(struct Env *e, struct Elf *elf);
 
 extern void (*sys_exit)(void);
 extern void (*sys_yield)(void);

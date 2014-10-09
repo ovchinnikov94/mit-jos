@@ -208,13 +208,17 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	return 0;
 }
 
-uintptr_t
-find_function(const char * const fname)
-{
-	const struct Stab *stabs = __STAB_BEGIN__, *stab_end = __STAB_END__;
+uintptr_t 
+find_function(const char * const fname) {
+	const struct Stab *stabs = __STAB_BEGIN__, *stabs_end = __STAB_END__;
 	const char *stabstr = __STABSTR_BEGIN__, *stabstr_end = __STABSTR_END__;
+        const struct Stab* i = stabs;
 	//LAB 3: Your code is here.
-
+        for (; i < stabs_end; i++) {
+            const char* str = &stabstr[i->n_strx];
+            if (i->n_type == N_FUN && (strfind(str, ':') - str) == strlen(fname) && !strncmp(str, fname, strlen(fname)))
+                return i->n_value;
+        }
 	return 0;
 }
 
