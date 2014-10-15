@@ -51,6 +51,8 @@ endif
 ifndef QEMU
 QEMU := $(shell if which qemu > /dev/null; \
 	then echo qemu; exit; \
+        elif which qemu-system-i386 > /dev/null; \
+        then echo qemu-system-i386; exit; \
 	else \
 	qemu=/Applications/Q.app/Contents/MacOS/i386-softmmu.app/Contents/MacOS/i386-softmmu; \
 	if test -x $$qemu; then echo $$qemu; exit; fi; fi; \
@@ -84,6 +86,9 @@ PERL	:= perl
 CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O1 -fno-builtin -I$(TOP) -MD
 CFLAGS += -fno-omit-frame-pointer
 CFLAGS += -Wall -Wno-format -Wno-unused -Werror -gstabs -m32
+# -fno-tree-ch prevented gcc from sometimes reordering read_ebp() before
+# mon_backtrace()'s function prologue on gcc version: (Debian 4.7.2-5) 4.7.2
+CFLAGS += -fno-tree-ch
 
 # Add -fno-stack-protector if the option exists.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
