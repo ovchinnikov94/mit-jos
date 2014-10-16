@@ -10,7 +10,6 @@ umain( int argc, char **argv )
 	int j;
 
 	cprintf( "TEST3\n" );
-
 	for(;;){}
 }
 
