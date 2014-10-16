@@ -205,12 +205,8 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_ss = GD_KD | 0;
 	e->env_tf.tf_cs = GD_KT | 0;
 	// LAB 3: Your code here.
-	int sp;
-	__asm__("mov %%esp, %0" : "=r"(sp));
 	
-	e->env_tf.tf_esp = sp;
-	sp+=2*PGSIZE;
-	__asm__("mov %0, %%esp" : "=r"(sp));
+	e->env_tf.tf_esp = 0xf0210000 + PGSIZE * 2 * ENVX(e->env_id);
 	//cprintf("ESP ESP - %d\n",e->env_tf.tf_esp);
 #else
 #endif
