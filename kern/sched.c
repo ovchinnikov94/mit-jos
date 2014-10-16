@@ -33,7 +33,7 @@ sched_yield(void) {
 	int flag = 0;
 	for (k = 0; k < NENV-1; k++) {
 		if (envs[i].env_status == ENV_RUNNABLE) {
-			cprintf("envrun RUNNABLE: %d\n",i);
+			cprintf("envrun RUNNABLE: %08x\n",i);
 			env_run(&envs[i]);
 			flag = 1;	
 		}
@@ -45,7 +45,7 @@ sched_yield(void) {
 		//cprintf("NOTHING ELSE");
 		if (curenv)
 			if (curenv->env_status == ENV_RUNNABLE || curenv->env_status == ENV_RUNNING) {
-				cprintf("envrun RUNNING: %d\n",curenv-envs);
+				cprintf("envrun RUNNING: %08x\n",curenv-envs);
 				env_run(curenv);
 			}
 	}

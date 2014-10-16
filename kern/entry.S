@@ -71,11 +71,12 @@ relocated:
 	# Clear the frame pointer register (EBP)
 	# so that once we get into debugging C code,
 	# stack backtraces will be terminated properly.
+	cli
 	movl	$0x0,%ebp			# nuke frame pointer
-
+	cli
 	# Set the stack pointer
 	movl	$(bootstacktop),%esp
-
+	cli
 	# now to C code
 	call	i386_init
 

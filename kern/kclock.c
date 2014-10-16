@@ -4,20 +4,22 @@
 #include <kern/kclock.h>
 
 void
-rtc_init(void)
-{
+rtc_init(void) {
 	nmi_disable();
 	// LAB 4: your code here
-
+	outb(IO_RTC_CMND, RTC_BREG);
+	uint8_t regB = inb(IO_RTC_DATA);
+	outb(IO_RTC_CMND,RTC_BREG);
+	outb(IO_RTC_DATA, regB | RTC_PIE);
 	nmi_enable();
 }
 
 uint8_t
-rtc_check_status(void)
-{
+rtc_check_status(void) {
 	uint8_t status = 0;
 	// LAB 4: your code here
-
+	outb(IO_RTC_CMND,RTC_CREG);
+	status = inb(IO_RTC_DATA);
 	return status;
 }
 

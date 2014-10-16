@@ -36,14 +36,16 @@ void i386_init(void)
 
 	pic_init();
 	rtc_init();
-
+	irq_setmask_8259A(irq_mask_8259A);
+	pic_send_eoi(rtc_check_status());
+	
 #ifdef CONFIG_KSPACE
 	// Touch all you want.
 	ENV_CREATE_KERNEL_TYPE(prog_test1);
 	ENV_CREATE_KERNEL_TYPE(prog_test2);
 	ENV_CREATE_KERNEL_TYPE(prog_test3);
 #endif
-
+	
 	// Schedule and run the first user environment!
 	sched_yield();
 }
