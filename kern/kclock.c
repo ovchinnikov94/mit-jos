@@ -9,7 +9,7 @@ rtc_init(void) {
 	// LAB 4: your code here
 	outb(IO_RTC_CMND, RTC_BREG);
 	uint8_t regB = inb(IO_RTC_DATA);
-	//outb(IO_RTC_CMND,RTC_BREG);
+	outb(IO_RTC_CMND,RTC_BREG);
 	outb(IO_RTC_DATA, regB | RTC_PIE);
 	nmi_enable();
 }

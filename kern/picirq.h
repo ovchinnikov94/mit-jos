@@ -31,7 +31,7 @@
 extern uint16_t irq_mask_8259A;
 void pic_init(void);
 void irq_setmask_8259A(uint16_t mask);
-void pic_send_eoi(uint8_t irq);
+void pic_send_eoi(/*uint8_t irq*/void);
 #endif // !__ASSEMBLER__
 
 #endif // !JOS_KERN_PICIRQ_H

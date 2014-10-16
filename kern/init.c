@@ -37,8 +37,8 @@ void i386_init(void)
 	pic_init();
 	rtc_init();
 	irq_setmask_8259A(irq_mask_8259A & ~(1<<IRQ_CLOCK));
-	//cprintf("RTC status: %d\n",rtc_check_status());
-	pic_send_eoi(rtc_check_status());
+	cprintf("RTC status: %d\n",rtc_check_status());
+	pic_send_eoi(/*rtc_check_status()*/);
 	
 #ifdef CONFIG_KSPACE
 	// Touch all you want.

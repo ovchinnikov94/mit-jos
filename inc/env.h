@@ -27,7 +27,7 @@ typedef int32_t envid_t;
 
 
 
-#define LOG2NENV		5
+#define LOG2NENV		10
 #define NENV			(1 << LOG2NENV)
 #define ENVX(envid)		((envid) & (NENV - 1))
 

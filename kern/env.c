@@ -466,13 +466,12 @@ env_run(struct Env *e) {
 		//cprintf("!=\n");
 		if (curenv!=NULL)
 			if (curenv->env_status == ENV_RUNNING) {
-				//cprintf("==ENV_RUNNING, %d\n",curenv-envs);
+				//cprintf("\nENV_RUNNING, %d\n",curenv-envs);
 				curenv->env_status = ENV_RUNNABLE;
 			}
 	
 	//	   2. Set 'curenv' to the new environment,
 		curenv = e;
-	
 	//	   3. Set its status to ENV_RUNNING,
 		e->env_status = ENV_RUNNING;
 	
@@ -480,6 +479,7 @@ env_run(struct Env *e) {
 		e->env_runs++;
 	
 	}
+	//asm volatile("sti");
 	// Step 2: Use env_pop_tf() to restore the environment's
 	//	   registers and starting execution of process.
 			
