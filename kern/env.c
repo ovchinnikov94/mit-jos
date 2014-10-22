@@ -208,7 +208,6 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	
 	e->env_tf.tf_esp = 0xf0210000 + PGSIZE * 2 * ENVX(e->env_id);
 	
-	//cprintf("ESP ESP - %d\n",e->env_tf.tf_esp);
 #else
 #endif
 

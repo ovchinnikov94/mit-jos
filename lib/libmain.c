@@ -25,8 +25,8 @@ libmain(int argc, char **argv)
 	umain(argc, argv);
 
 	// exit
-#ifdef JOS_PROG
+//#ifdef JOS_PROG
 	sys_exit();
-#endif
+//#endif
 }
 
