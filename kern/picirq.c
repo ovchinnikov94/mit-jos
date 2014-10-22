@@ -87,7 +87,7 @@ irq_setmask_8259A(uint16_t mask)
 void
 pic_send_eoi(uint8_t irq)
 {
-	if(irq >= 8);
+	if(irq >= 8)
 		outb(IO_PIC2_CMND, PIC_EOI);
 	outb(IO_PIC1_CMND, PIC_EOI);
 }

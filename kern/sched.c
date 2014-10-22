@@ -3,6 +3,8 @@
 #include <kern/env.h>
 #include <kern/monitor.h>
 
+#include <kern/picirq.h>
+#include <kern/kclock.h>
 
 struct Taskstate cpu_ts;
 void sched_halt(void);
@@ -11,7 +13,7 @@ void sched_halt(void);
 void
 sched_yield(void) {
 	struct Env *idle;
-	
+	pic_send_eoi(rtc_check_status());
 	// Implement simple round-robin scheduling.
 	//
 	// Search through 'envs' for an ENV_RUNNABLE environment in
