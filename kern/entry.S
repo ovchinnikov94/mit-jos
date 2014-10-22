@@ -67,6 +67,7 @@ entry:
 	mov	$relocated, %eax
 	jmp	*%eax
 relocated:
+	
 	# Clear the frame pointer register (EBP)
 	# so that once we get into debugging C code,
 	# stack backtraces will be terminated properly.
@@ -92,6 +93,7 @@ spin:	jmp	spin
 .globl sys_yield
 .type  sys_yield, @function
 sys_yield:
+	cli
 	popl ret_eip
 	movl %ebp, ebp_reg
 	movl %esp, esp_reg
@@ -116,7 +118,7 @@ sys_yield:
 	pushl %esi
 	pushl %edi
 	pushl %esp
-	cli
+	#cli
 	call csys_yield
 loop1:	jmp loop1
 
@@ -125,13 +127,14 @@ loop1:	jmp loop1
 .globl sys_exit
 .type  sys_exit, @function
 sys_exit:
+	cli
 	popl ret_eip
 	movl %ebp, ebp_reg
 	movl %esp, esp_reg
 	
 	movl $0x0,%ebp
 	movl $(bootstacktop),%esp
-	cli
+	#cli
 	call csys_exit 
 loop2:	jmp loop2
 #endif
