@@ -11,6 +11,10 @@ rtc_init(void) {
 	uint8_t regB = inb(IO_RTC_DATA);
 	outb(IO_RTC_CMND,RTC_BREG);
 	outb(IO_RTC_DATA, regB | RTC_PIE);
+	
+	outb(IO_RTC_CMND, RTC_AREG);
+	uint8_t regA = inb(IO_RTC_DATA);
+	outb(IO_RTC_DATA, regA | 15);
 	nmi_enable();
 }
 

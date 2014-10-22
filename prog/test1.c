@@ -15,6 +15,6 @@ umain( int argc, char **argv )
 		for( i = 0; i < 10000; ++i ) {}
 		sys_yield();
 	}
-	sys_exit();
+	//sys_exit();
 }
 

@@ -18,6 +18,6 @@ umain( int argc, char **argv )
 		sys_yield();
 	}
 	//cprintf("\n");
-	sys_exit();
+	//sys_exit();
 }
 
