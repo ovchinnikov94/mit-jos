@@ -45,8 +45,6 @@ void i386_init(void)
 	ENV_CREATE_KERNEL_TYPE(prog_test2);
 	ENV_CREATE_KERNEL_TYPE(prog_test3);
 #endif
-	//cprintf("RTC status: %d\n",rtc_check_status());
-	//pic_send_eoi(rtc_check_status());
 	// Schedule and run the first user environment!
 	
 	sched_yield();
