@@ -14,6 +14,9 @@
 #include <kern/picirq.h>
 #include <kern/kclock.h>
 
+#include <kern/alloc.h>
+#include <kern/spinlock.h>
+
 void i386_init(void)
 {
 	extern char edata[], end[];
@@ -42,13 +45,16 @@ void i386_init(void)
 	irq_setmask_8259A(irq_mask_8259A & ~(1<<IRQ_CLOCK));
 	pic_send_eoi(rtc_check_status());
 	
+	__spin_initlock(&alloc_spinlock, "alloc");
+	__spin_initlock(&free_spinlock, "free");
+	
 #ifdef CONFIG_KSPACE
 	// Touch all you want.
 	ENV_CREATE_KERNEL_TYPE(prog_test1);
 	ENV_CREATE_KERNEL_TYPE(prog_test2);
-	ENV_CREATE_KERNEL_TYPE(prog_test3);
-	ENV_CREATE_KERNEL_TYPE(prog_test4);
-	ENV_CREATE_KERNEL_TYPE(prog_test5);
+	//ENV_CREATE_KERNEL_TYPE(prog_test3);
+	//ENV_CREATE_KERNEL_TYPE(prog_test4);
+	//ENV_CREATE_KERNEL_TYPE(prog_test5);
 #endif
 	// Schedule and run the first user environment!
 	

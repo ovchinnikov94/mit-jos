@@ -11,6 +11,9 @@
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
 
+#include <kern/tsc.h>
+//#include <kern/tsc.c>
+
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
 
@@ -24,7 +27,9 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
-	{"stack","Stack backtrace",mon_backtrace},
+	{ "stack", "Stack backtrace", mon_backtrace},
+	{ "start", "Starting timer", mon_start},
+	{ "stop", "Stopping timer", mon_stop},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -85,7 +90,13 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
+int mon_start(int argc, char **argv, struct Trapframe *tf){
+	return timer_start();
+}
 
+int mon_stop(int argc, char **argv, struct Trapframe *tf){
+	return timer_stop();
+}
 
 /***** Kernel monitor command interpreter *****/
 

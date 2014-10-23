@@ -171,13 +171,39 @@ void tsc_calibrate(void)
 		(unsigned long)cpu_freq % 1000);
 }
 
-void timer_start(void)
+uint64_t jos_timer = -1;
+
+int timer_start(void)
 {
     //Lab 5: You code here
+    if (jos_timer != -1) {
+    	cprintf("Error on timer: It has been started!\n\n");
+    	return -1;
+    }
+    else {
+    	jos_timer = read_tsc();
+    	return 0;
+    }
+    
 }
 
-void timer_stop(void)
+int timer_stop(void)
 {
     //Lab 5: You code here
+    if (jos_timer == -1) {
+    	cprintf("Error in timer: It has not been started yet! Nothing to stop!\n\n");
+    	return -1;
+    }
+    else {
+    	uint64_t stop_timer = read_tsc();
+    	if (stop_timer < jos_timer) {
+    		cprintf("Error in timer: time is going back!\n\n");
+    		return -1;
+    	}
+    	int time = (stop_timer-jos_timer)/cpu_freq;
+    	cprintf("Timer: %d.%03d seconds gone!\n",  time / 1000,time % 1000);
+    	jos_timer = -1;
+    	return 0;
+    }
 }
 

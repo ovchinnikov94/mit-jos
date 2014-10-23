@@ -31,6 +31,7 @@ static void check_list(void)
 void *
 test_alloc(uint8_t nbytes)
 {
+	spin_lock(&alloc_spinlock);
 	Header *p, *prevp;
 	unsigned nunits;
 
@@ -62,12 +63,14 @@ test_alloc(uint8_t nbytes)
 			return NULL;
 		}
 	}
+	spin_unlock(&alloc_spinlock);
 }
 
 /* free: put block ap in free list */
 void
 test_free(void *ap)
 {
+	spin_lock(&free_spinlock);
 	Header *bp, *p;
 	bp = (Header *) ap - 1; /* point to block header */
 
@@ -89,5 +92,6 @@ test_free(void *ap)
 	freep = p;
 
 	check_list();
+	spin_unlock(&free_spinlock);
 }
 

@@ -3,6 +3,10 @@
 
 typedef long Align; /* for alignment to long boundary */
 
+struct spinlock alloc_spinlock;
+struct spinlock free_spinlock;
+
+
 union header { /* block header */
 	struct {
 		union header *next; /* next block if on free list */
