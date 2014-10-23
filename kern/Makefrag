@@ -40,11 +40,13 @@ KERN_SRCFILES +=       kern/spinlock.c \
 KERN_SRCFILES := $(wildcard $(KERN_SRCFILES))
 
 # Binary program images to embed within the kernel.
+ifeq ($(CONFIG_KSPACE),y)
 KERN_BINFILES :=	prog/test1 \
 			prog/test2 \
 			prog/test3 \
 			prog/test4 \
 			prog/test5
+endif
 
 KERN_OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(KERN_SRCFILES))
 KERN_OBJFILES := $(patsubst %.S, $(OBJDIR)/%.o, $(KERN_OBJFILES))
