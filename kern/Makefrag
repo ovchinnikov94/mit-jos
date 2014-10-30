@@ -46,6 +46,20 @@ KERN_BINFILES :=	prog/test1 \
 			prog/test3 \
 			prog/test4 \
 			prog/test5
+else
+KERN_BINFILES :=	user/hello \
+			user/buggyhello \
+			user/buggyhello2 \
+			user/evilhello \
+			user/testbss \
+			user/divzero \
+			user/breakpoint \
+			user/softint \
+			user/badsegment \
+			user/faultread \
+			user/faultreadkernel \
+			user/faultwrite \
+			user/faultwritekernel
 endif
 
 KERN_OBJFILES := $(patsubst %.c, $(OBJDIR)/%.o, $(KERN_SRCFILES))

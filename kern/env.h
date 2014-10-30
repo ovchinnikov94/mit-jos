@@ -28,6 +28,12 @@ extern void (*sys_yield)(void);
 // Without this extra macro, we couldn't pass macros like TEST to
 // ENV_CREATE because of the C pre-processor's argument prescan rule.
 #define ENV_PASTE3(x, y, z) x ## y ## z
+#define ENV_EXTERN(x)          \
+		extern uint8_t ENV_PASTE3(_binary_obj_, x, _start)[],	\
+			ENV_PASTE3(_binary_obj_, x, _size)[];
+
+#define ENV_START(x) ENV_PASTE3(_binary_obj_, x, _start)
+#define ENV_SIZE(x) ENV_PASTE3(_binary_obj_, x, _size)
 
 #define ENV_CREATE_KERNEL_TYPE(x)					\
 	do {								\
@@ -35,7 +41,16 @@ extern void (*sys_yield)(void);
 			ENV_PASTE3(_binary_obj_, x, _size)[];		\
 		env_create(ENV_PASTE3(_binary_obj_, x, _start),		\
 			   (int)ENV_PASTE3(_binary_obj_, x, _size),	\
-			   ENV_TYPE_KERNEL);				\
+			   ENV_TYPE_KERNEL);			\
+	} while (0)
+
+#define ENV_CREATE(x, type)						\
+	do {								\
+		extern uint8_t ENV_PASTE3(_binary_obj_, x, _start)[],	\
+			ENV_PASTE3(_binary_obj_, x, _size)[];		\
+		env_create(ENV_PASTE3(_binary_obj_, x, _start),		\
+			   (int)ENV_PASTE3(_binary_obj_, x, _size),	\
+			   type);					\
 	} while (0)
 
 #endif // !JOS_KERN_ENV_H
