@@ -13,6 +13,7 @@
 #include <kern/monitor.h>
 #include <kern/sched.h>
 #include <kern/cpu.h>
+#include <kern/spinlock.h>
 
 #ifdef CONFIG_KSPACE
 struct Env env_array[NENV];
@@ -281,6 +282,16 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 		}
 	}
 #endif
+
+	// Enable interrupts while in user mode.
+	// LAB 9: Your code here.
+
+	// Clear the page fault handler until user installs one.
+	e->env_pgfault_upcall = 0;
+
+	// Also clear the IPC receiving flag.
+	e->env_ipc_recving = 0;
+
 	// commit the allocation
 	env_free_list = e->env_link;
 	*newenv_store = e;
