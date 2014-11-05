@@ -16,7 +16,7 @@ static size_t npages_basemem;	// Amount of base memory (in pages)
 // These variables are set in mem_init()
 pde_t *kern_pgdir;		// Kernel's initial page directory
 struct PageInfo *pages;		// Physical page state array
-static struct PageInfo *page_free_list;	// Free list of physical pages
+static struct PageInfo *page_free_list = NULL;	// Free list of physical pages
 
 static char *nextfree;	// virtual address of next byte of free memory
 
@@ -91,8 +91,8 @@ boot_alloc(uint32_t n)
 		extern char end[];
 		nextfree = ROUNDUP((char *) end, PGSIZE);
 	}
-
 	nextfree = ROUNDUP(nextfree, PGSIZE);
+	if (n == 0) return (void *)nextfree;
 	result = nextfree;
 	nextfree += n;
 	if (PADDR(nextfree) > npages * PGSIZE)
@@ -138,8 +138,6 @@ mem_init(void)
 	// (For now, you don't have understand the greater purpose of the
 	// following line.)
 	
-	//pgdir[PDX(VPT)] = PADDR(pgdir)|PTE_W|PTE_P;
-
 	// Permissions: kernel R, user R
 	kern_pgdir[PDX(UVPT)] = PADDR(kern_pgdir) | PTE_U | PTE_P;
 
@@ -290,14 +288,14 @@ struct PageInfo *
 page_alloc(int alloc_flags)
 {
 	// Fill this function in
-	/*if (!page_free_list) {
-		panic("page_alloc: No free pages!\n");
+	if (!page_free_list) {
+		//panic("page_alloc: No free pages!\n");
 		return NULL;
-	}*/
-	struct PageInfo * result = page_free_list;
-	if (!page_free_list) page_free_list = page_free_list->pp_link;
-	if (alloc_flags & ALLOC_ZERO) {
-		memset(result, 0, sizeof(struct PageInfo));
+	}
+	struct PageInfo *result = page_free_list;
+	page_free_list = page_free_list->pp_link;
+	if (alloc_flags == ALLOC_ZERO) {
+		memset(page2kva(result), '\0', PGSIZE);
 	}
 	return result;
 }
@@ -312,22 +310,16 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
-	/*if (pp->pp_ref != 0) {
-		panic("Page free: pp_ref is greater than 0.\n");
-		return;
+	if (pp->pp_ref != 0) {
+		//panic("Page free: pp_ref is greater than 0.\n");
+		//return;
 	}
 	if (pp->pp_link != NULL) {
-		panic("Page free: pp_link is not NULL\n");
-		return;
-	}*/
-	if (page_free_list) {
-		pp->pp_link = page_free_list;
-		page_free_list = pp;
+		//panic("Page free: pp_link is not NULL\n");
+		//return;
 	}
-	else {
-		page_free_list = pp;
-		page_free_list->pp_link = NULL;
-	}
+	pp->pp_link = page_free_list;
+	page_free_list = pp;
 }
 
 //

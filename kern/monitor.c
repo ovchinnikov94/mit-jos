@@ -12,7 +12,7 @@
 #include <kern/kdebug.h>
 
 #include <kern/tsc.h>
-//#include <kern/tsc.c>
+#include<kern/pmap.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -30,6 +30,7 @@ static struct Command commands[] = {
 	{ "stack", "Stack backtrace", mon_backtrace},
 	{ "start", "Starting timer", mon_start},
 	{ "stop", "Stopping timer", mon_stop},
+	{ "map", "Shows you which pages are allocated or free", mon_map},
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -96,6 +97,18 @@ int mon_start(int argc, char **argv, struct Trapframe *tf){
 
 int mon_stop(int argc, char **argv, struct Trapframe *tf){
 	return timer_stop();
+}
+
+int mon_map(int argc, char **argv, struct Trapframe *tf){
+	size_t i;
+	size_t start = 0;
+	for (i = 1; i < npages; i++){
+		while (pages[i].pp_ref == pages[i-1].pp_ref) i++;
+		if (pages[i-1].pp_ref == 0 ) cprintf("%d..%d FREE\n",start, i-1);
+		else cprintf("%d..%d ALLOCATED\n",start, i-1);
+		start = i;
+	}
+	return 0;
 }
 
 /***** Kernel monitor command interpreter *****/
