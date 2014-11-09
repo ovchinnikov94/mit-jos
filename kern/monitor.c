@@ -103,8 +103,8 @@ int mon_map(int argc, char **argv, struct Trapframe *tf){
 	size_t i;
 	size_t start = 0;
 	for (i = 1; i < npages; i++){
-		while (pages[i].pp_ref == pages[i-1].pp_ref) i++;
-		if (pages[i-1].pp_ref == 0 ) cprintf("%d..%d FREE\n",start, i-1);
+		while ((pages[i].pp_link != NULL) == (pages[i-1].pp_link != NULL)) i++;
+		if (pages[i-1].pp_link != NULL ) cprintf("%d..%d FREE\n",start, i-1);
 		else cprintf("%d..%d ALLOCATED\n",start, i-1);
 		start = i;
 	}
