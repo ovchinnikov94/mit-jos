@@ -55,6 +55,13 @@ struct Env {
 	enum EnvType env_type;		// Indicates special system environments
 	unsigned env_status;		// Status of the environment
 	uint32_t env_runs;		// Number of times environment has run
+#ifdef CONFIG_KSPACE
+	uint32_t blocking_cycles;
+	int static_num;
+#else
+	// Address space
+	pde_t *env_pgdir;		// Kernel virtual address of page dir
+#endif
 };
 
 #endif // !JOS_INC_ENV_H

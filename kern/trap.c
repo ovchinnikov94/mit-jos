@@ -3,10 +3,12 @@
 #include <inc/assert.h>
 #include <inc/string.h>
 
+#include <kern/pmap.h>
 #include <kern/trap.h>
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/env.h>
+#include <kern/syscall.h>
 #include <kern/sched.h>
 #include <kern/kclock.h>
 #include <kern/picirq.h>
@@ -64,6 +66,40 @@ static const char *trapname(int trapno)
 }
 
 void
+trap_init(void)
+{
+	extern struct Segdesc gdt[];
+
+	// LAB 8: Your code here.
+
+	// Per-CPU setup 
+	trap_init_percpu();
+}
+
+// Initialize and load the per-CPU TSS and IDT
+void
+trap_init_percpu(void)
+{
+	// Setup a TSS so that we get the right stack
+	// when we trap to the kernel.
+	ts.ts_esp0 = KSTACKTOP;
+	ts.ts_ss0 = GD_KD;
+
+	// Initialize the TSS slot of the gdt.
+	gdt[GD_TSS0 >> 3] = SEG16(STS_T32A, (uint32_t) (&ts),
+					sizeof(struct Taskstate), 0);
+	gdt[GD_TSS0 >> 3].sd_s = 0;
+
+	// Load the TSS selector (like other segment selectors, the
+	// bottom three bits are special; we leave them 0)
+	ltr(GD_TSS0);
+
+	// Load the IDT
+	lidt(&idt_pd);
+}
+
+
+void
 clock_idt_init(void)
 {
 	extern void (*clock_thdlr)(void);
@@ -100,8 +136,10 @@ print_trapframe(struct Trapframe *tf)
 	cprintf("  eip  0x%08x\n", tf->tf_eip);
 	cprintf("  cs   0x----%04x\n", tf->tf_cs);
 	cprintf("  flag 0x%08x\n", tf->tf_eflags);
-	cprintf("  esp  0x%08x\n", tf->tf_esp);
-	cprintf("  ss   0x----%04x\n", tf->tf_ss);
+	if ((tf->tf_cs & 3) != 0) {
+		cprintf("  esp  0x%08x\n", tf->tf_esp);
+		cprintf("  ss   0x----%04x\n", tf->tf_ss);
+	}
 }
 
 void
@@ -146,6 +184,8 @@ trap_dispatch(struct Trapframe *tf)
 	}
 }
 
+bool in_clk_intr = false;
+
 void
 trap(struct Trapframe *tf)
 {
@@ -163,8 +203,11 @@ trap(struct Trapframe *tf)
 	// the interrupt path.
 	assert(!(read_eflags() & FL_IF));
 
+	cprintf("Incoming TRAP frame at %p\n", tf);
+
 	assert(curenv);
 
+	in_clk_intr = (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK);
 	// Garbage collect if current enviroment is a zombie
 	if (curenv->env_status == ENV_DYING) {
 		env_free(curenv);
@@ -193,5 +236,28 @@ trap(struct Trapframe *tf)
 		env_run(curenv);
 	else
 		sched_yield();
+}
+
+
+void
+page_fault_handler(struct Trapframe *tf)
+{
+	uint32_t fault_va;
+
+	// Read processor's CR2 register to find the faulting address
+	fault_va = rcr2();
+
+	// Handle kernel-mode page faults.
+
+	// LAB 8: Your code here.
+
+	// We've already handled kernel-mode exceptions, so if we get here,
+	// the page fault happened in user mode.
+
+	// Destroy the environment that caused the fault.
+	cprintf("[%08x] user fault va %08x ip %08x\n",
+		curenv->env_id, fault_va, tf->tf_eip);
+	print_trapframe(tf);
+	env_destroy(curenv);
 }
 

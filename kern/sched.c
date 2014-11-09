@@ -6,6 +6,8 @@
 #include <kern/picirq.h>
 #include <kern/kclock.h>
 
+static void scheduler(void);
+
 struct Taskstate cpu_ts;
 void sched_halt(void);
 
@@ -62,6 +64,13 @@ sched_yield(void) {
 void
 sched_halt(void) {
 	int i;
+
+	for(i = 0; i < NENV; ++i) {
+		if (envs[i].env_status == ENV_NOT_RUNNABLE) {
+			envs[i].env_status = ENV_RUNNABLE;
+			sched_yield();
+		}
+	}
 
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.

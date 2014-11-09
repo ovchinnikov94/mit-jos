@@ -2,6 +2,7 @@
 
 #include <inc/mmu.h>
 #include <inc/memlayout.h>
+#include <inc/trap.h>
 
 # Shift Right Logical 
 #define SRL(val, shamt)		(((val) >> (shamt)) & ~(-1 << (32 - (shamt))))
@@ -137,6 +138,72 @@ sys_exit:
 	#cli
 	call csys_exit 
 loop2:	jmp loop2
+
+.stabs "sys_write:",36,0,0,sys_write
+.globl sys_write
+.type sys_write, @function
+sys_write:
+	cli
+	movb $0, in_intr
+	popl ret_eip
+	movl %ebp, ebp_reg
+	movl %esp, esp_reg
+	movl $0x0,%ebp
+	movl $(bootstacktop),%esp
+	pushl $GD_KD
+	pushl esp_reg
+	pushfl
+	orl $0x200, (%esp)
+	pushl $GD_KT
+	pushl ret_eip
+	pushl $0x0
+	pushl $0x0
+	pushl %ds
+	pushl %es
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	pushl %ebx
+	pushl esp_reg
+	pushl ebp_reg
+	pushl %esi
+	pushl %edi
+	pushl %esp
+	call csys_write
+loop3:	jmp loop3
+
+.stabs "sys_start:",36,0,0,sys_start
+.globl sys_start
+.type sys_start, @function
+sys_start:
+	cli
+	movb $0, in_intr
+	popl ret_eip
+	movl %ebp, ebp_reg
+	movl %esp, esp_reg
+	movl $0x0,%ebp
+	movl $(bootstacktop),%esp
+	pushl $GD_KD
+	pushl esp_reg
+	pushfl
+	orl $0x200, (%esp)
+	pushl $GD_KT
+	pushl ret_eip
+	pushl $0x0
+	pushl $0x0
+	pushl %ds
+	pushl %es
+	pushl %eax
+	pushl %ecx
+	pushl %edx
+	pushl %ebx
+	pushl esp_reg
+	pushl ebp_reg
+	pushl %esi
+	pushl %edi
+	pushl %esp
+	call csys_start
+loop4:	jmp loop4
 #endif
 
 .data
