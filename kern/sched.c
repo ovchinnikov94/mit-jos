@@ -46,7 +46,6 @@ sched_yield(void) {
 		if (i >= NENV || i < 0) i = 0;
 	}
 	if (!flag) {
-		//cprintf("NOTHING ELSE");
 		if (curenv)
 			if (curenv->env_status == ENV_RUNNABLE || curenv->env_status == ENV_RUNNING) {
 				cprintf("envrun RUNNING: %08x\n",curenv-envs);

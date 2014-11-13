@@ -64,14 +64,16 @@ static const char *trapname(int trapno)
 		return "Hardware Interrupt";
 	return "(unknown trap)";
 }
-
+extern uint32_t hd[];
 void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
-
+	
 	// LAB 8: Your code here.
-
+	int i;
+	for (i = 0; i < 256; i++)
+		SETGATE(idt[i], 0, GD_KT, hd[i], 0);
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -165,22 +167,27 @@ trap_dispatch(struct Trapframe *tf)
 	// The hardware sometimes raises these because of noise on the
 	// IRQ line or other reasons. We don't care.
 	//
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
-		cprintf("Spurious interrupt on irq 7\n");
-		print_trapframe(tf);
-		return;
-	}
+	switch (tf->tf_trapno) {
+		case T_PGFLT:
+			page_fault_handler(tf);
+		default:
+			if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
+				cprintf("Spurious interrupt on irq 7\n");
+				print_trapframe(tf);
+				return;
+			}
 
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK) {
-		sched_yield();
-        	return;
-    	}
+			if (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK) {
+				sched_yield();
+		        	return;
+		    	}
 
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT) {
-		panic("unhandled trap in kernel");
-	} else {
-		env_destroy(curenv);
+			print_trapframe(tf);
+			if (tf->tf_cs == GD_KT) {
+				panic("unhandled trap in kernel");
+			} else {
+				env_destroy(curenv);
+			}
 	}
 }
 
