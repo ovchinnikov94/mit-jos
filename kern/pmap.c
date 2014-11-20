@@ -366,9 +366,9 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
 	pte_t *pg_table;
-	pde_t pde = pgdir[PDX(va)];
-	if (pde & PTE_P) {
-		pg_table = (pte_t *)KADDR(PTE_ADDR(pde));
+	pde_t p = pgdir[PDX(va)];
+	if (p & PTE_P) {
+		pg_table = (pte_t *)KADDR(PTE_ADDR(p));
 		return  pg_table + PTX(va);
 	}
 	if (!create) return NULL;
@@ -376,8 +376,8 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 	if (!newPage) return NULL;
 	newPage->pp_ref = 1;
 	physaddr_t paddr = (physaddr_t)(pte_t *)page2pa(newPage);
-	pde = paddr | PTE_W | PTE_P | PTE_U;
-	pgdir[PDX(va)] = pde;
+	p = paddr | PTE_W | PTE_P | PTE_U;
+	pgdir[PDX(va)] = p;
 	memset(KADDR(paddr), 0, PGSIZE);
 	return (pte_t *)KADDR(PTE_ADDR(pgdir[PDX(va)])) + PTX(va);
 }
