@@ -41,14 +41,7 @@
 	pushl $(num);							\
 	jmp _alltraps
 
-.comm intr_ret_eip, 4
-.comm intr_ebp_reg, 4
-.comm intr_esp_reg, 4
-.comm intr_cs, 4
-.comm intr_eflags, 4
 
-.globl in_intr
-.comm in_intr, 1
 
 .text
 	TRAPHANDLER(h0, 0);
@@ -307,6 +300,19 @@
 	TRAPHANDLER_NOEC(h253, 253);
 	TRAPHANDLER_NOEC(h254, 254);
 	TRAPHANDLER_NOEC(h255, 255);
+
+.globl _alltraps
+_alltraps:
+	pushl %ds
+	pushl %es
+	pushal
+	movl GD_KD, %eax
+	movl %eax, %ds
+	movl %eax, %es
+	pushl %esp
+	call trap
+	
+
 
 .data
 .globl hd
@@ -570,18 +576,15 @@ hd:
 
 
 
+.comm intr_ret_eip, 4
+.comm intr_ebp_reg, 4
+.comm intr_esp_reg, 4
+.comm intr_cs, 4
+.comm intr_eflags, 4
 
-.text 
-.globl _alltraps
-_alltraps:
-	pushl %ds
-	pushl %es
-	pushal
-	movl GD_KD, %eax
-	movl %eax, %ds
-	movl %eax, %es
-	pushl %esp
-	call trap
+.globl in_intr
+.comm in_intr, 1
+
 
 .text
 .globl clock_thdlr
@@ -604,7 +607,7 @@ clock_thdlr:
 	pushl $0
 	pushl $(IRQ_OFFSET + IRQ_CLOCK)
 	pushl %ds
-        pushl %es
+    pushl %es
 
 	pushl %eax
 	pushl %ecx

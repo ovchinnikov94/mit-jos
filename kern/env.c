@@ -320,6 +320,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 static void
 region_alloc(struct Env *e, void *va, size_t len)
 {
+	//cprintf("region_alloc\n");
 	// LAB 3: Your code here.
 	// (But only if you need it for load_icode.)
 	//
@@ -328,14 +329,13 @@ region_alloc(struct Env *e, void *va, size_t len)
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
 	pte_t *pgdir = e->env_pgdir;
-	char *to = ROUNDDOWN(va, PGSIZE);
-	size_t s = ROUNDUP(PGOFF(va) + len, PGSIZE);
+	uintptr_t begin = (uintptr_t)ROUNDDOWN(va, PGSIZE);
+	uintptr_t end = (uintptr_t)ROUNDUP(va + len, PGSIZE);
 	struct PageInfo *p;
-	int i;
-	for (i = 0; i < s; i+=PGSIZE) {
+	for (; begin < end; begin+=PGSIZE) {
 		p = page_alloc(0);
 		if (!p) panic("region_alloc: It's impossible to alloc page");
-		if (page_insert(pgdir, p, to + i, PTE_W | PTE_U)) panic("region_alloc: It's impossible to insert page");
+		if (page_insert(pgdir, p, (void *)begin, PTE_W | PTE_U) == -E_NO_MEM) panic("region_alloc: It's impossible to insert page");
 	}
 
 }
@@ -412,7 +412,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size) {
 			memset((void *) ph->p_va + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
 		}
 	}
-	lcr3(PADDR(kern_pgdir));
+	
 	e->env_tf.tf_eip = elfhdr->e_entry;
 #ifdef CONFIG_KSPACE
 	// Uncomment this for task №5.
@@ -422,6 +422,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size) {
 	// at virtual address USTACKTOP - PGSIZE.
 	// LAB 8: Your code here.
 	region_alloc(e, (void *)USTACKTOP - PGSIZE, PGSIZE);
+	lcr3(PADDR(kern_pgdir));
 }
 
 #ifdef CONFIG_KSPACE

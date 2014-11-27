@@ -75,6 +75,8 @@ trap_init(void)
 	for (i = 0; i < 256; i++)
 		SETGATE(idt[i], 0, GD_KT, hd[i], 0);
 	// Per-CPU setup 
+	SETGATE(idt[T_BRKPT], 0, GD_KT, hd[T_BRKPT], 3);
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, hd[T_SYSCALL], 3);
 	trap_init_percpu();
 }
 
@@ -167,21 +169,33 @@ trap_dispatch(struct Trapframe *tf)
 	// The hardware sometimes raises these because of noise on the
 	// IRQ line or other reasons. We don't care.
 	//
+	cprintf("trap_dispatch: trapno = %d\n", tf->tf_trapno);
 	switch (tf->tf_trapno) {
+		case T_DIVIDE:
+			cprintf("DIVIDING ON NULL\n");
+			print_trapframe(tf);
+			if (tf->tf_cs == GD_KT) {
+				panic("unhandled trap in kernel");
+			} else {
+				env_destroy(curenv);
+			}
+			return;
 		case T_PGFLT:
 			page_fault_handler(tf);
+		case IRQ_OFFSET + IRQ_SPURIOUS: 
+			cprintf("Spurious interrupt on irq 7\n");
+			print_trapframe(tf);
+			return;
+		case IRQ_OFFSET + IRQ_CLOCK: 
+			sched_yield();
+		    return;
+		case T_SYSCALL: {
+		    struct PushRegs *regs = &tf->tf_regs;
+		    int result = syscall(regs->reg_eax, regs->reg_edx, regs->reg_ecx,
+		                    regs->reg_ebx, regs->reg_edi, regs->reg_esi);
+		    regs->reg_eax = result; }
+		    return;
 		default:
-			if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
-				cprintf("Spurious interrupt on irq 7\n");
-				print_trapframe(tf);
-				return;
-			}
-
-			if (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK) {
-				sched_yield();
-		        	return;
-		    	}
-
 			print_trapframe(tf);
 			if (tf->tf_cs == GD_KT) {
 				panic("unhandled trap in kernel");
@@ -196,6 +210,7 @@ bool in_clk_intr = false;
 void
 trap(struct Trapframe *tf)
 {
+	//cprintf("trap\n");
 	// The environment may have set DF and some versions
 	// of GCC rely on DF being clear
 	asm volatile("cld" ::: "cc");

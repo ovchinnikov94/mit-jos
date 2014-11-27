@@ -32,7 +32,7 @@ sched_yield(void) {
 
 	// LAB 3: Your code here.
 	//cprintf("SCHED_YIELD\n");
-	int i = (curenv) ? (curenv - envs + 1) : 1;
+	int i = (curenv) ? (curenv - envs + 1) : 0;
 	int k;
 	int flag = 0;
 	for (k = 0; k < NENV-1; k++) {
