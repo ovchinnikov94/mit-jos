@@ -591,6 +591,18 @@ hd:
 .type clock_thdlr, @function;
 .align 2;
 clock_thdlr:
+	pushl %ds
+	pushl %es
+	pushal
+
+	movl $GD_KD, %eax
+	movw %ax, %ds
+	movw %ax, %es
+
+	pushl %esp
+	call trap
+	jmp .
+
 	movb $1, in_intr
 	popl intr_ret_eip
 	popl intr_cs

@@ -1,6 +1,8 @@
 #include <inc/assert.h>
 #include <inc/x86.h>
+#include <kern/spinlock.h>
 #include <kern/env.h>
+#include <kern/pmap.h>
 #include <kern/monitor.h>
 
 #include <kern/picirq.h>

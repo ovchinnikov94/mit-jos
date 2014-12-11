@@ -15,6 +15,7 @@
 #include <kern/cpu.h>
 #include <kern/picirq.h>
 #include <kern/kclock.h>
+#include <kern/spinlock.h>
 
 #include <kern/alloc.h>
 #include <kern/spinlock.h>
