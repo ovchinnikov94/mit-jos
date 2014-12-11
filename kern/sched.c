@@ -37,7 +37,7 @@ sched_yield(void) {
 	int flag = 0;
 	for (k = 0; k < NENV-1; k++) {
 		if (envs[i].env_status == ENV_RUNNABLE) {
-			cprintf("envrun RUNNABLE: %08x\n",i);
+			cprintf("envrun RUNNABLE: %08x\n",envs[i].env_id);
 			env_run(&envs[i]);
 			flag = 1;	
 		}
@@ -53,7 +53,6 @@ sched_yield(void) {
 			}
 	}
 	// sched_halt never returns
-	cprintf("sched_halt\n");
 	sched_halt();
 }
 

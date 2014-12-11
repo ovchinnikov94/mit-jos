@@ -136,7 +136,7 @@ env_init(void)
 		envs[i].env_status = ENV_FREE;
 		envs[i].env_runs = 0;
 	}
-	env_free_list = envs;
+	env_free_list = &envs[0];
 	// Per-CPU part of the initialization
 	env_init_percpu();
 }
@@ -231,7 +231,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	}
 	//env_free_list = env_free_list->env_link;
 	int gen = (e->env_id + (1 << ENVGENSHIFT)) & ~(NENV - 1);
-	if (gen>0)
+	if (gen<=0)
 		gen = 1<<ENVGENSHIFT;
 	e->env_id = gen | (e - envs);
 
@@ -240,12 +240,12 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 		return r;
 
 	// Generate an env_id for this environment.
-	gen = (e->env_id + (1 << ENVGENSHIFT)) & ~(NENV - 1);
+	/*gen = (e->env_id + (1 << ENVGENSHIFT)) & ~(NENV - 1);
 	if (gen <= 0)	// Don't create a negative env_id.
 		gen = 1 << ENVGENSHIFT;
 	e->env_id = gen | (e - envs);
 
-
+	*/
 	e->env_parent_id = parent_id;
 
 #ifdef CONFIG_KSPACE

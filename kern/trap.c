@@ -169,10 +169,10 @@ trap_dispatch(struct Trapframe *tf)
 	// The hardware sometimes raises these because of noise on the
 	// IRQ line or other reasons. We don't care.
 	//
-	cprintf("trap_dispatch: trapno = %d\n", tf->tf_trapno);
+	struct PushRegs *regs;
+	int result;
 	switch (tf->tf_trapno) {
 		case T_DIVIDE:
-			cprintf("DIVIDING ON NULL\n");
 			print_trapframe(tf);
 			if (tf->tf_cs == GD_KT) {
 				panic("unhandled trap in kernel");
@@ -182,6 +182,7 @@ trap_dispatch(struct Trapframe *tf)
 			return;
 		case T_PGFLT:
 			page_fault_handler(tf);
+			return;
 		case IRQ_OFFSET + IRQ_SPURIOUS: 
 			cprintf("Spurious interrupt on irq 7\n");
 			print_trapframe(tf);
@@ -189,11 +190,15 @@ trap_dispatch(struct Trapframe *tf)
 		case IRQ_OFFSET + IRQ_CLOCK: 
 			sched_yield();
 		    return;
-		case T_SYSCALL: {
-		    struct PushRegs *regs = &tf->tf_regs;
-		    int result = syscall(regs->reg_eax, regs->reg_edx, regs->reg_ecx,
+		case T_BRKPT:
+			print_trapframe(tf);
+			monitor(tf);
+			return;
+		case T_SYSCALL: 
+		    regs = &tf->tf_regs;
+		    result = syscall(regs->reg_eax, regs->reg_edx, regs->reg_ecx,
 		                    regs->reg_ebx, regs->reg_edi, regs->reg_esi);
-		    regs->reg_eax = result; }
+		    regs->reg_eax = result; 
 		    return;
 		default:
 			print_trapframe(tf);
@@ -227,23 +232,24 @@ trap(struct Trapframe *tf)
 
 	cprintf("Incoming TRAP frame at %p\n", tf);
 
-	assert(curenv);
+	if ((tf->tf_cs & 3) == 3) {
+		assert(curenv);
 
-	in_clk_intr = (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK);
-	// Garbage collect if current enviroment is a zombie
-	if (curenv->env_status == ENV_DYING) {
-		env_free(curenv);
-		curenv = NULL;
-		sched_yield();
+		in_clk_intr = (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK);
+		// Garbage collect if current enviroment is a zombie
+		if (curenv->env_status == ENV_DYING) {
+			env_free(curenv);
+			curenv = NULL;
+			sched_yield();
+		}
+
+		// Copy trap frame (which is currently on the stack)
+		// into 'curenv->env_tf', so that running the environment
+		// will restart at the trap point.
+		curenv->env_tf = *tf;
+		// The trapframe on the stack should be ignored from here on.
+		tf = &curenv->env_tf;
 	}
-
-	// Copy trap frame (which is currently on the stack)
-	// into 'curenv->env_tf', so that running the environment
-	// will restart at the trap point.
-	curenv->env_tf = *tf;
-	// The trapframe on the stack should be ignored from here on.
-	tf = &curenv->env_tf;
-
 	// Record that tf is the last real trapframe so
 	// print_trapframe can print some additional information.
 	last_tf = tf;
