@@ -231,7 +231,7 @@ trap(struct Trapframe *tf)
 	// the interrupt path.
 	assert(!(read_eflags() & FL_IF));
 
-	cprintf("Incoming TRAP frame at %p\n", tf);
+	//cprintf("Incoming TRAP frame at %p\n", tf);
 
 	if ((tf->tf_cs & 3) == 3) {
 		assert(curenv);
@@ -312,7 +312,33 @@ page_fault_handler(struct Trapframe *tf)
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
 	// LAB 9: Your code here.
-
+	 if (curenv->env_pgfault_upcall && (tf->tf_esp < USTACKTOP || tf->tf_esp >= UXSTACKTOP - PGSIZE)) {
+		uint32_t xtop;
+		if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
+			xtop = tf->tf_esp - sizeof(struct UTrapframe) - 4;
+		else
+			xtop = UXSTACKTOP - sizeof(struct UTrapframe);
+		static int is_xstack_checked = 1;
+		if (!is_xstack_checked) {
+			user_mem_assert(curenv, (void *)(UXSTACKTOP - PGSIZE), PGSIZE, PTE_W | PTE_U);
+			is_xstack_checked = 1;
+		}
+		// For the damn test to be OK.
+		user_mem_assert(curenv, (void *)xtop, UXSTACKTOP - xtop, PTE_W | PTE_U);
+		// Push the struct UTrapframe onto the stack.
+		struct UTrapframe *utf = (struct UTrapframe *)xtop;
+		utf->utf_eflags = tf->tf_eflags;
+		utf->utf_eip = tf->tf_eip;
+		utf->utf_err = tf->tf_err;
+		utf->utf_esp = tf->tf_esp;
+		utf->utf_fault_va = fault_va;
+		utf->utf_regs = tf->tf_regs;
+		// Run current env with user-page fault handler.
+		tf->tf_eip = (uint32_t)curenv->env_pgfault_upcall;
+		tf->tf_esp = xtop;
+		env_run(curenv);
+		// Never reach here.
+	}
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",
 		curenv->env_id, fault_va, tf->tf_eip);
