@@ -58,9 +58,7 @@ sys_env_destroy(envid_t envid)
 envid_t
 sys_getenvid(void)
 {
-	int tmp;
-	 tmp = syscall(SYS_getenvid, 0, 0, 0, 0, 0, 0);
-	 return tmp;
+	return syscall(SYS_getenvid, 0, 0, 0, 0, 0, 0);
 }
 
 void
@@ -93,6 +91,12 @@ int
 sys_env_set_status(envid_t envid, int status)
 {
 	return syscall(SYS_env_set_status, 1, envid, status, 0, 0, 0);
+}
+
+int
+sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
+{
+	return syscall(SYS_env_set_trapframe, 1, envid, (uint32_t) tf, 0, 0, 0);
 }
 
 int
