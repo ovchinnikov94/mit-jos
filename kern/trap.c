@@ -170,7 +170,7 @@ trap_dispatch(struct Trapframe *tf)
 	// The hardware sometimes raises these because of noise on the
 	// IRQ line or other reasons. We don't care.
 	//
-<<<<<<< HEAD
+
 	struct PushRegs *regs;
 	int result;
 	switch (tf->tf_trapno) {
@@ -209,17 +209,6 @@ trap_dispatch(struct Trapframe *tf)
 			} else {
 				env_destroy(curenv);
 			}
-=======
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_SPURIOUS) {
-		cprintf("Spurious interrupt on irq 7\n");
-		print_trapframe(tf);
-		return;
-	}
-
-	if (tf->tf_trapno == IRQ_OFFSET + IRQ_CLOCK) {
-		sched_yield();
-        	return;
-    	}
 
 	// Handle keyboard and serial interrupts.
 	// LAB 10: Your code here.
@@ -230,7 +219,6 @@ trap_dispatch(struct Trapframe *tf)
 		panic("unhandled trap in kernel");
 	} else {
 		env_destroy(curenv);
->>>>>>> lab10
 	}
 }
 
