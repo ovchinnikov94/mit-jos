@@ -209,7 +209,7 @@ trap_dispatch(struct Trapframe *tf)
 			} else {
 				env_destroy(curenv);
 			}
-
+	}
 	// Handle keyboard and serial interrupts.
 	// LAB 10: Your code here.
 
