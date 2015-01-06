@@ -313,20 +313,20 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 9: Your code here.
 	 if (curenv->env_pgfault_upcall && (tf->tf_esp < USTACKTOP || tf->tf_esp >= UXSTACKTOP - PGSIZE)) {
-		uint32_t xtop;
+		uint32_t exception_top;
 		if (tf->tf_esp >= UXSTACKTOP - PGSIZE && tf->tf_esp < UXSTACKTOP)
-			xtop = tf->tf_esp - sizeof(struct UTrapframe) - 4;
+			exception_top = tf->tf_esp - sizeof(struct UTrapframe) - 4;
 		else
-			xtop = UXSTACKTOP - sizeof(struct UTrapframe);
+			exception_top = UXSTACKTOP - sizeof(struct UTrapframe);
 		static int is_xstack_checked = 1;
 		if (!is_xstack_checked) {
 			user_mem_assert(curenv, (void *)(UXSTACKTOP - PGSIZE), PGSIZE, PTE_W | PTE_U);
 			is_xstack_checked = 1;
 		}
 		// For the damn test to be OK.
-		user_mem_assert(curenv, (void *)xtop, UXSTACKTOP - xtop, PTE_W | PTE_U);
+		user_mem_assert(curenv, (void *)exception_top, UXSTACKTOP - exception_top, PTE_W | PTE_U);
 		// Push the struct UTrapframe onto the stack.
-		struct UTrapframe *utf = (struct UTrapframe *)xtop;
+		struct UTrapframe *utf = (struct UTrapframe *)exception_top;
 		utf->utf_eflags = tf->tf_eflags;
 		utf->utf_eip = tf->tf_eip;
 		utf->utf_err = tf->tf_err;
@@ -335,7 +335,7 @@ page_fault_handler(struct Trapframe *tf)
 		utf->utf_regs = tf->tf_regs;
 		// Run current env with user-page fault handler.
 		tf->tf_eip = (uint32_t)curenv->env_pgfault_upcall;
-		tf->tf_esp = xtop;
+		tf->tf_esp = exception_top;
 		env_run(curenv);
 		// Never reach here.
 	}

@@ -548,7 +548,6 @@ env_create(uint8_t *binary, size_t size, enum EnvType type) {
 void
 env_free(struct Env *e)
 {
-#ifndef CONFIG_KSPACE
 	pte_t *pt;
 	uint32_t pdeno, pteno;
 	physaddr_t pa;
@@ -558,12 +557,10 @@ env_free(struct Env *e)
 	// gets reused.
 	if (e == curenv)
 		lcr3(PADDR(kern_pgdir));
-#endif
 
 	// Note the environment's demise.
 	cprintf("[%08x] free env %08x\n", curenv ? curenv->env_id : 0, e->env_id);
 
-#ifndef CONFIG_KSPACE
 	// Flush all mapped pages in the user portion of the address space
 	static_assert(UTOP % PTSIZE == 0);
 	for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
@@ -591,11 +588,9 @@ env_free(struct Env *e)
 	pa = PADDR(e->env_pgdir);
 	e->env_pgdir = 0;
 	page_decref(pa2page(pa));
-#endif
 	// return the environment to the free list
-#ifdef CONFIG_KSPACE
-	envsid[e->static_num] = 0;
-#endif
+	//envsid[e->static_num] = 0;
+
 	e->env_status = ENV_FREE;
 	e->env_link = env_free_list;
 	env_free_list = e;
@@ -609,7 +604,6 @@ env_free(struct Env *e)
 void
 env_destroy(struct Env *e)
 {
-#ifdef CONFIG_KSPACE
 	// If e is currently running on other CPUs, we change its state to
 	// ENV_DYING. A zombie environment will be freed the next time
 	// it traps to the kernel.
@@ -624,13 +618,6 @@ env_destroy(struct Env *e)
 		curenv = NULL;
 		sched_yield();
 	}
-#else
-	env_free(e);
-
-	cprintf("Destroyed the only environment - nothing more to do!\n");
-	while (1)
-		monitor(NULL);
-#endif
 }
 
 #ifdef CONFIG_KSPACE
