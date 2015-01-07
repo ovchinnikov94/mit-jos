@@ -53,9 +53,11 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 	// LAB 9: Your code here.
 	if (!pg) pg = (void *)UTOP;
 	int rslt = sys_ipc_try_send(to_env, val, pg, perm);
-	if (rslt == -E_IPC_NOT_RECV)
+	while (rslt == -E_IPC_NOT_RECV) {
 		sys_yield();
-	else if (rslt) {
+		rslt = sys_ipc_try_send(to_env, val, pg, perm);
+	}
+	if (rslt) {
 		panic("ipc_send: Uknown error");
 	}
 }

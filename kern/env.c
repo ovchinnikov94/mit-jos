@@ -230,7 +230,6 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 		cprintf("NO FREE ENV\n");
 		return -E_NO_FREE_ENV;
 	}
-	//env_free_list = env_free_list->env_link;
 	int gen = (e->env_id + (1 << ENVGENSHIFT)) & ~(NENV - 1);
 	if (gen<=0)
 		gen = 1<<ENVGENSHIFT;
@@ -241,19 +240,8 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 		return r;
 
 	// Generate an env_id for this environment.
-	/*gen = (e->env_id + (1 << ENVGENSHIFT)) & ~(NENV - 1);
-	if (gen <= 0)	// Don't create a negative env_id.
-		gen = 1 << ENVGENSHIFT;
-	e->env_id = gen | (e - envs);
-
-	*/
 	e->env_parent_id = parent_id;
-
-#ifdef CONFIG_KSPACE
-	e->env_type = ENV_TYPE_KERNEL;
-#else
 	e->env_type = ENV_TYPE_USER;
-#endif
 	e->env_status = ENV_RUNNABLE;
 	e->env_runs = 0;
 
@@ -271,36 +259,16 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	// we switch privilege levels, the hardware does various
 	// checks involving the RPL and the Descriptor Privilege Level
 	// (DPL) stored in the descriptors themselves.
-#ifdef CONFIG_KSPACE
-	e->env_tf.tf_ds = GD_KD | 0;
-	e->env_tf.tf_es = GD_KD | 0;
-	e->env_tf.tf_ss = GD_KD | 0;
-	e->env_tf.tf_cs = GD_KT | 0;
-	// LAB 3: Your code here.
-	
-	e->env_tf.tf_esp = 0xf0210000 + PGSIZE * 2 * ENVX(e->env_id);
-	
-#else
+
 	e->env_tf.tf_ds = GD_UD | 3;
 	e->env_tf.tf_es = GD_UD | 3;
 	e->env_tf.tf_ss = GD_UD | 3;
 	e->env_tf.tf_esp = USTACKTOP;
 	e->env_tf.tf_cs = GD_UT | 3;
-#endif
+
 	e->env_tf.tf_eflags |= FL_IF;
 	// You will set e->env_tf.tf_eip later.
 
-#ifdef CONFIG_KSPACE
-	{
-		extern int envsid[10];
-		static int static_init_num = 0;
-		if (static_init_num < 10) {
-			e->static_num = static_init_num;
-			envsid[static_init_num] = 1;
-			++static_init_num;
-		}
-	}
-#endif
 
 	// Enable interrupts while in user mode.
 	// LAB 9: Your code here.
