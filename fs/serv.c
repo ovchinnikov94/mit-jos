@@ -214,7 +214,7 @@ serve_read(envid_t envid, union Fsipc *ipc)
 		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
 
 	// Lab 10: Your code here:
-	/*struct OpenFile *of;
+	struct OpenFile *of;
 	if (openfile_lookup(envid, req->req_fileid, &of)<0)
 		return -E_INVAL;
 	struct File *f = of->o_file;
@@ -223,22 +223,7 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	if (fsize > PGSIZE) fsize = PGSIZE;
 	fsize = file_read(f,ret->ret_buf, fsize, fd->fd_offset);
 	fd->fd_offset += fsize;
-	return fsize;*/
-	struct OpenFile *o;
-	int r = openfile_lookup(envid, ipc->read.req_fileid, &o);
-	if (r < 0)
-	return r;
-	struct File *f = o->o_file;
-	struct Fd *fd = o->o_fd;
-	// Actual size to read.
-	size_t rdsz = req->req_n < PGSIZE ? req->req_n : PGSIZE;
-	// Actual size readed.
-	ssize_t rddsz = file_read(f, ret->ret_buf, rdsz, fd->fd_offset);
-	if (rddsz < 0)
-	return rddsz;
-	// Update current seek position.
-	fd->fd_offset += rddsz;
-	return rddsz;
+	return fsize;
 }
 
 
@@ -253,7 +238,7 @@ serve_write(envid_t envid, struct Fsreq_write *req)
 		cprintf("serve_write %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
 
 	// LAB 10: Your code here.
-	/*struct OpenFile *o;
+	struct OpenFile *o;
 	if (openfile_lookup(envid, req->req_fileid, &o) < 0)
 		return -E_INVAL;
 	struct File *f = o->o_file;
@@ -263,26 +248,7 @@ serve_write(envid_t envid, struct Fsreq_write *req)
 	fsize = file_write(f, req->req_buf, fsize, fd->fd_offset);
 	fd->fd_offset += fsize;
 	if (fd->fd_offset > f->f_size) f->f_size = fd->fd_offset;
-	return fsize;*/
-	// Find open file.
-	struct OpenFile *o;
-	int r = openfile_lookup(envid, req->req_fileid, &o);
-	if (r < 0)
-		return r;
-	struct File *f = o->o_file;
-	struct Fd *fd = o->o_fd;
-	// Actual size to write.
-	size_t wrsz = req->req_n < PGSIZE ? req->req_n : PGSIZE;
-	// Maybe the file needs extention.
-	if (fd->fd_offset + wrsz > f->f_size)
-		f->f_size = fd->fd_offset + wrsz;
-	// Actual size written.
-	ssize_t wrnsz = file_write(f, req->req_buf, wrsz, fd->fd_offset);
-	if (wrnsz < 0)
-		return wrnsz;
-	// Update current seek position.
-	fd->fd_offset += wrnsz;
-	return wrnsz;
+	return fsize;
 }
 
 // Stat ipc->stat.req_fileid.  Return the file's struct Stat to the
