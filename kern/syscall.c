@@ -363,7 +363,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		return -E_IPC_NOT_RECV;
 	}
 	if ((uintptr_t)srcva < UTOP) {
-		if (!((uintptr_t)srcva % PGSIZE)) {
+		if (((uintptr_t)srcva % PGSIZE)) {
 			panic("sys_ipc_try_send: Source va is not page-aligned");
 			return -E_INVAL;
 		}

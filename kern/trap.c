@@ -329,12 +329,6 @@ page_fault_handler(struct Trapframe *tf)
 			exception_top = tf->tf_esp - sizeof(struct UTrapframe) - 4;
 		else
 			exception_top = UXSTACKTOP - sizeof(struct UTrapframe);
-		static int is_xstack_checked = 1;
-		if (!is_xstack_checked) {
-			user_mem_assert(curenv, (void *)(UXSTACKTOP - PGSIZE), PGSIZE, PTE_W | PTE_U);
-			is_xstack_checked = 1;
-		}
-		// For the damn test to be OK.
 		user_mem_assert(curenv, (void *)exception_top, UXSTACKTOP - exception_top, PTE_W | PTE_U);
 		// Push the struct UTrapframe onto the stack.
 		struct UTrapframe *utf = (struct UTrapframe *)exception_top;
