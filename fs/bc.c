@@ -81,17 +81,27 @@ flush_block(void *addr)
 
 	if (addr < (void*)DISKMAP || addr >= (void*)(DISKMAP + DISKSIZE))
 		panic("flush_block of bad va %08x", addr);
-
+	/*
 	// LAB 10: Your code here.
 	void *addr2 = ROUNDDOWN(addr, BLKSIZE);
+	pte_t pte = uvpt[PGNUM(addr2)];
 	if (va_is_mapped(addr2) && va_is_dirty(addr2)) {
 		uint32_t sn = BLKSECTS * blockno;
 		cprintf("%d\n", blockno);
 		if (ide_write(sn, addr2, BLKSECTS))
 			panic("flush_block: Error in ide_write");
-		if (sys_page_map(0, addr2, 0, addr2, uvpt[PGNUM(addr2)] & PTE_SYSCALL))
+		if (sys_page_map(0, addr2, 0, addr2, pte & PTE_SYSCALL))
 			panic("flush_block: Error in sys_page_map");
-	}
+	}*/
+	void *pgva = ROUNDDOWN(addr, BLKSIZE);
+	pte_t pte = uvpt[PGNUM(pgva)];
+	if (!va_is_mapped(pgva) || !va_is_dirty(pgva))
+		return;
+	uint32_t secno = blockno * BLKSECTS;
+	if (ide_write(secno, pgva, BLKSECTS))
+		panic("flush_block: ide write error");
+	if (sys_page_map(0, pgva, 0, pgva, pte & PTE_SYSCALL))
+		panic("flush_block: map error");
 }
 
 // Test that the block cache works, by smashing the superblock and
