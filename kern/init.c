@@ -57,15 +57,6 @@ void i386_init(void)
 	__spin_initlock(&alloc_spinlock, "alloc");
 	__spin_initlock(&free_spinlock, "free");
 	
-#ifdef CONFIG_KSPACE
-	// Touch all you want.
-	ENV_CREATE_KERNEL_TYPE(prog_test1);
-	ENV_CREATE_KERNEL_TYPE(prog_test2);
-
-	ENV_CREATE_KERNEL_TYPE(prog_test3);
-	ENV_CREATE_KERNEL_TYPE(prog_test4);
-	ENV_CREATE_KERNEL_TYPE(prog_test5);
-#else
 	ENV_CREATE(fs_fs, ENV_TYPE_FS);
 
 #if defined(TEST)
@@ -75,7 +66,6 @@ void i386_init(void)
 	// Touch all you want.
 	ENV_CREATE(user_icode, ENV_TYPE_USER);
 #endif // TEST*
-#endif
 
 	// Should not be necessary - drains keyboard because interrupt has given up.
 	kbd_intr();

@@ -84,7 +84,6 @@ spawn(const char *prog, const char **argv)
 	//     correct initial eip and esp values in the child.
 	//
 	//   - Start the child process running with sys_env_set_status().
-
 	if ((r = open(prog, O_RDONLY)) < 0)
 		return r;
 	fd = r;
@@ -301,6 +300,29 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 11: Your code here.
+	int r;
+	int pdeno, pteno;
+	uint32_t pn = 0;
+	for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
+		if (uvpd[pdeno] == 0) {
+			// skip empty PDEs
+			pn += NPTENTRIES;
+			continue;
+		}
+		for (pteno = 0; pteno < NPTENTRIES; pteno++,pn++) {
+			if (uvpt[pn] == 0)
+				// skip empty PTEs
+				continue;
+			int perm = uvpt[pn] & PTE_SYSCALL;
+			if (perm & PTE_SHARE) {
+				void *addr = (void *)(pn << PGSHIFT);
+				r = sys_page_map(0, addr, child, addr, perm);
+				if (r)
+					return r;
+			}
+		}
+	}
+
 	return 0;
 }
 

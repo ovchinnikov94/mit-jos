@@ -63,22 +63,23 @@ pgfault(struct UTrapframe *utf)
 static int
 duppage(envid_t envid, unsigned pn)
 {
-	int r;
-
 	// LAB 9: Your code here.
 	pte_t p = uvpt[pn];
+	int perm = p & PTE_SYSCALL;
 	void *va = (void *)(pn<<PGSHIFT);
-	if ((p & PTE_COW) || (p & PTE_W)){
-		if (sys_page_map(0, va, envid, va, PTE_COW | PTE_P | PTE_U)){
+	if (!(perm & PTE_SHARE) && ((perm & PTE_COW) || (perm & PTE_W))){
+		perm &= ~PTE_W;
+		perm |= PTE_COW;
+		if (sys_page_map(0, va, envid, va, perm)){
 			panic("duppage: Impossible to map page");
 			return -E_INVAL;
 		}
-		if (sys_page_map(0, va, 0, va, PTE_COW | PTE_P | PTE_U)) {
+		if (sys_page_map(0, va, 0, va, perm)) {
 			panic("duppage: Impossible to map page(change perm)");
 			return -E_INVAL;
 		}
 	}
-	else if (sys_page_map(0, va, envid, va, PTE_P | PTE_U)){
+	else if (sys_page_map(0, va, envid, va, perm)){
 		panic("duppage: Impossible to map page");
 		return -E_INVAL;
 	}
