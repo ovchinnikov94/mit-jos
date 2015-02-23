@@ -202,6 +202,12 @@ trap_dispatch(struct Trapframe *tf)
 		                    regs->reg_ebx, regs->reg_edi, regs->reg_esi);
 		    regs->reg_eax = result; 
 		    return;
+		case IRQ_OFFSET + IRQ_KBD:
+			kbd_intr();
+			return;
+		case IRQ_OFFSET + IRQ_SERIAL:
+			serial_intr();
+			return;
 		default:
 			print_trapframe(tf);
 			if (tf->tf_cs == GD_KT) {

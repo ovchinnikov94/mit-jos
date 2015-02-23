@@ -305,13 +305,11 @@ copy_shared_pages(envid_t child)
 	uint32_t pn = 0;
 	for (pdeno = 0; pdeno < PDX(UTOP); pdeno++) {
 		if (uvpd[pdeno] == 0) {
-			// skip empty PDEs
 			pn += NPTENTRIES;
 			continue;
 		}
 		for (pteno = 0; pteno < NPTENTRIES; pteno++,pn++) {
 			if (uvpt[pn] == 0)
-				// skip empty PTEs
 				continue;
 			int perm = uvpt[pn] & PTE_SYSCALL;
 			if (perm & PTE_SHARE) {
