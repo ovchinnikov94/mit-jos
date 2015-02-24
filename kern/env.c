@@ -699,6 +699,7 @@ env_run(struct Env *e) {
 	//	   1. Set the current environment (if any) back to
 	//	      ENV_RUNNABLE if it is ENV_RUNNING (think about
 	//	      what other states it can be in),
+	
 	if (curenv!=e) {
 		if (curenv!=NULL)
 			if (curenv->env_status == ENV_RUNNING) {

@@ -140,7 +140,7 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 	//panic("sys_env_set_trapframe not implemented");
 	struct Env* env;
 	if (envid2env(envid, &env, 1)){
-		panic("sys_env_set_trapframe: Invalid envid");
+		warn("sys_env_set_trapframe: Invalid envid");
 		return -E_BAD_ENV;
 	}
 	env->env_tf = *tf;
@@ -162,12 +162,12 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 9: Your code here.
 	if (func == NULL) {
-		panic("sys_env_set_pgfault_upcall: func is NULL");
+		warn("sys_env_set_pgfault_upcall: func is NULL");
 		return -1;
 	}
 	struct Env *env;
 	if (envid2env(envid, &env, 1)) {
-		panic("sys_env_set_pgfault_upcall: Invalid envid");
+		warn("sys_env_set_pgfault_upcall: Invalid envid");
 		return -E_BAD_ENV;
 	}
 	env->env_pgfault_upcall = func;
@@ -201,26 +201,27 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   allocated!
 
 	// LAB 9: Your code here.
-	if (!(perm & PTE_U) || !(perm & PTE_P) || (perm & ~PTE_SYSCALL)){
-		panic("sys_page_alloc: Inappropriate permissions");
+	
+	if ((uint32_t)va >= UTOP || (uint32_t)va % PGSIZE) {
+		warn("sys_page_alloc: Invalid virtual address");
 		return -E_INVAL;
 	}
-	if ((uint32_t)va >= UTOP || (uint32_t)va % PGSIZE != 0) {
-		panic("sys_page_alloc: Invalid virtual address");
+	if (!(perm & PTE_U) || !(perm & PTE_P) || (perm & ~PTE_SYSCALL)){
+		warn("sys_page_alloc: Inappropriate permissions");
 		return -E_INVAL;
 	}
 	struct Env *env;
 	if (envid2env(envid, &env, 1) < 0) {
-		panic("sys_page_alloc: Invalid envid");
+		warn("sys_page_alloc: Invalid envid");
 		return -E_BAD_ENV;
 	}
-	struct PageInfo *page = page_alloc(0);
+	struct PageInfo *page = page_alloc(ALLOC_ZERO);
 	if (!page) {
-		panic("sys_page_alloc: No free memory for page_alloc");
+		warn("sys_page_alloc: No free memory for page_alloc");
 		return -E_NO_MEM;
 	}
 	if (page_insert(env->env_pgdir, page, va, perm)){
-		panic("sys_page_alloc: No free memory for page_insert");
+		warn("sys_page_alloc: No free memory for page_insert");
 		page_free(page);
 		return -E_NO_MEM;
 	}
@@ -257,29 +258,29 @@ sys_page_map(envid_t srcenvid, void *srcva,
 	// LAB 9: Your code here.
 	struct Env *src_env, *dst_env;
 	if (envid2env(srcenvid, &src_env, 1) || envid2env(dstenvid, &dst_env, 1)){
-		panic("sys_page_map: Invalid srcenvid or dstenvid");
+		warn("sys_page_map: Invalid srcenvid or dstenvid");
 		return -E_BAD_ENV;
 	}
 	if ((uint32_t)srcva >= UTOP || (uint32_t)dstva >= UTOP || (uint32_t)srcva %  PGSIZE != 0 || (uint32_t)dstva %  PGSIZE != 0){
-		panic("sys_page_map: Invalid srcva or dstva");
+		warn("sys_page_map: Invalid srcva or dstva");
 		return -E_INVAL;
 	}
 	if (!(perm & PTE_U) || !(perm & PTE_P) || (perm & ~PTE_SYSCALL)){
-		panic("sys_page_map: Inappropriate permissions");
+		warn("sys_page_map: Inappropriate permissions");
 		return -E_INVAL;
 	}
 	pte_t *src_pte;
 	struct PageInfo *page = page_lookup(src_env->env_pgdir, srcva, &src_pte);
 	if (!page) {
-		panic("sys_page_map: srcva is not mapped");
+		warn("sys_page_map: srcva is not mapped");
 		return -E_INVAL;
 	}
 	if ((perm & PTE_W) && !(*src_pte & PTE_W)){
-		panic("sys_page_map: srcva is read-only and perm & PTE_W is true");
+		warn("sys_page_map: srcva is read-only and perm & PTE_W is true");
 		return -E_INVAL;
 	}
 	if (page_insert(dst_env->env_pgdir, page, dstva, perm)){
-		panic("sys_page_map: No free memory for page_insert");
+		warn("sys_page_map: No free memory for page_insert");
 		return -E_NO_MEM;
 	}
 	return 0;
@@ -299,12 +300,12 @@ sys_page_unmap(envid_t envid, void *va)
 
 	// LAB 9: Your code here.
 	if ((uint32_t)va >= UTOP || (uint32_t)va % PGSIZE != 0){
-		panic("sys_page_unmap: Invalid virtual address");
+		warn("sys_page_unmap: Invalid virtual address");
 		return -E_INVAL;
 	}	
 	struct Env *env;
 	if (envid2env(envid, &env, 1)){
-		panic("sys_page_unmap: Invalid env_id");
+		warn("sys_page_unmap: Invalid env_id");
 		return -E_BAD_ENV;
 	}
 	page_remove(env->env_pgdir, va);

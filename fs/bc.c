@@ -86,7 +86,7 @@ flush_block(void *addr)
 	pte_t pte = uvpt[PGNUM(addr2)];
 	if (va_is_mapped(addr2) && va_is_dirty(addr2)) {
 		uint32_t sn = BLKSECTS * blockno;
-		cprintf("%d\n", blockno);
+		//cprintf("%d\n", blockno);
 		if (ide_write(sn, addr2, BLKSECTS))
 			panic("flush_block: Error in ide_write");
 		if (sys_page_map(0, addr2, 0, addr2, pte & PTE_SYSCALL))

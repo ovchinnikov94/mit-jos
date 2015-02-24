@@ -307,13 +307,13 @@ page_alloc(int alloc_flags)
 {
 	// Fill this function in
 	if (!page_free_list) {
-		//panic("page_alloc: No free pages!\n");
+		warn("page_alloc: No free pages!\n");
 		return NULL;
 	}
 	struct PageInfo *result = page_free_list;
 	page_free_list = page_free_list->pp_link;
-	if (alloc_flags == ALLOC_ZERO) {
-		memset(page2kva(result), '\0', PGSIZE);
+	if (alloc_flags & ALLOC_ZERO) {
+		memset(page2kva(result), 0, PGSIZE);
 	}
 	result->pp_link = NULL;
 	return result;
